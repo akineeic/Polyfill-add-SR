@@ -40,11 +40,26 @@ class Utils {
     this.outCanvas.width = this.outputSize[1];
     this.outCanvas.height = this.outputSize[0];
 
-    if (!this.rawModel) {
-      let result = await this.loadTfLiteModel(this.modelFile);
-      let flatBuffer = new flatbuffers.ByteBuffer(result);
-      this.rawModel = tflite.Model.getRootAsModel(flatBuffer);
-      printTfLiteModel(this.rawModel);
+    let result = await this.loadModelFile(this.modelFile);
+
+    switch (this.modelFile.split('.').pop()) {
+      case 'tflite':
+        let flatBuffer = new flatbuffers.ByteBuffer(result);
+        this.rawModel = tflite.Model.getRootAsModel(flatBuffer);
+        this.rawModel._rawFormat = 'TFLITE';
+        printTfLiteModel(this.rawModel);
+        break;
+      case 'onnx':
+        let err = onnx.ModelProto.verify(result);
+        if (err) {
+          throw new Error(`Invalid model ${err}`);
+        }
+        this.rawModel = onnx.ModelProto.decode(result);
+        this.rawModel._rawFormat = 'ONNX';
+        printOnnxModel(this.rawModel);
+        break;
+      default:
+        throw new Error('Unrecognized model format');
     }
 
     this.loaded = true;
@@ -66,7 +81,14 @@ class Utils {
       backend: backend,
       prefer: prefer
     };
-    this.model = new TFliteModelImporter(kwargs);
+    switch (this.rawModel._rawFormat) {
+      case 'TFLITE':
+        this.model = new TFliteModelImporter(kwargs);
+        break;
+      case 'ONNX':
+        this.model = new OnnxModelImporter(kwargs);
+        break;
+    }
     let result = await this.model.createCompiledModel();
     console.log(`compilation result: ${result}`);
     let start = performance.now();
@@ -113,7 +135,7 @@ class Utils {
     return {time: elapsed.toFixed(2)};
   }
 
-  async loadTfLiteModel(modelUrl) {
+  async loadModelFile(modelUrl) {
     let arrayBuffer = await this.loadUrl(modelUrl, true, true);
     let bytes = new Uint8Array(arrayBuffer);
     return bytes;
@@ -153,7 +175,7 @@ class Utils {
     const width = this.inputSize[1];
     const channels = 3;
     const imageChannels = 4; // RGBA
-    const [mean, offset] = [127.5, 1];
+    const [mean, offset] = [255, 0];
     if (canvas.width !== width || canvas.height !== height) {
       throw new Error(`canvas.width(${canvas.width}) is not ${width} or canvas.height(${canvas.height}) is not ${height}`);
     }
