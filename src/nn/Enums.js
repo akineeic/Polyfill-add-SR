@@ -1316,6 +1316,10 @@ export const OperationCode = {
    */
   PRELU: 71,
 
+  LEAKY_RELU: 123,
+
+  CONV_TRANSPOSE: 223,
+
   /** Performs a atrous 2-D convolution operation.
    *
    * The ATROUS_CONV_2D op sweeps a 2-D filter that can mix channels together over a batch of

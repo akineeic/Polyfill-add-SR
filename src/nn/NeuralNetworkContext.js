@@ -73,6 +73,8 @@ export default class NeuralNetworkContext {
     this.ARGMAX = OperationCode.ARGMAX;
     this.MAXIMUM = OperationCode.MAXIMUM;
     this.PRELU = OperationCode.PRELU;
+    this.LEAKY_RELU = OperationCode.LEAKY_RELU;
+    this.CONV_TRANSPOSE = OperationCode.CONV_TRANSPOSE;
     this.ATROUS_CONV_2D = OperationCode.ATROUS_CONV_2D;
     this.ATROUS_DEPTHWISE_CONV_2D = OperationCode.ATROUS_DEPTHWISE_CONV_2D;
   }
